@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GiGi — AI Meeting Agent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #4ade80;
+      --blue: #60a5fa;
+      --red: #f87171;
+      --yellow: #facc15;
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --muted: #666;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 36px; height: 36px;
+      background: var(--green);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 800; color: #000;
+    }
+
+    header h1 { font-size: 1.2rem; font-weight: 600; }
+    header h1 span { color: var(--green); }
+    .tagline { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+
+    /* ── Main layout ── */
+    main {
+      flex: 1;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* ── Launch card ── */
+    .launch-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .launch-card h2 { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="url"], input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      flex: 1;
+    }
+
+    input:focus { border-color: var(--green); }
+    input::placeholder { color: var(--muted); }
+
+    .name-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .name-row label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+    .name-row input { max-width: 160px; flex: none; }
+
+    .btn {
+      background: var(--green);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 12px 24px;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-sm {
+      font-size: 0.78rem;
+      padding: 6px 12px;
+      border-radius: 7px;
+    }
+
+    .btn-red { background: var(--red); }
+
+    /* ── Toast ── */
+    #toast {
+      border-radius: 10px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      padding: 12px 16px;
+      display: none;
+      white-space: pre-wrap;
+    }
+
+    #toast.success { background: #0d2e1a; border: 1px solid var(--green); color: var(--green); display: block; }
+    #toast.error   { background: #2e0d0d; border: 1px solid var(--red);   color: var(--red);   display: block; }
+
+    /* ── Bot list ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-header h2 { font-size: 1rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .refresh-btn:hover { border-color: var(--green); color: var(--green); }
+
+    #botList {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot-yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .dot-red    { background: var(--red); }
+    .dot-grey   { background: var(--muted); }
+
+    .bot-info { flex: 1; min-width: 0; }
+    .bot-name { font-weight: 600; font-size: 0.95rem; }
+    .bot-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .bot-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .status-in-call    { background: #0d2e1a; color: var(--green); }
+    .status-joining    { background: #2a2700; color: var(--yellow); }
+    .status-done       { background: #1a1a1a; color: var(--muted); }
+    .status-error      { background: #2e0d0d; color: var(--red); }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 32px 0;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+    }
+
+    .spinning { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">G</div>
+    <h1><span>GiGi</span> — AI Meeting Agent</h1>
+    <span class="tagline">Powered by ElevenLabs + Recall.ai</span>
+  </header>
+
+  <main>
+    <!-- Launch form -->
+    <div class="launch-card">
+      <h2>Send GiGi to a Meeting</h2>
+      <div class="input-row">
+        <input type="url" id="meetingUrl" placeholder="https://meet.google.com/xxx-xxxx-xxx" autofocus />
+      </div>
+      <div class="name-row">
+        <label>Bot name</label>
+        <input type="text" id="botName" value="GiGi" />
+        <button class="btn" id="launchBtn">Send GiGi ↗</button>
+      </div>
+      <div id="toast"></div>
+    </div>
+
+    <!-- Active bots -->
+    <div>
+      <div class="section-header">
+        <h2>Recent Bots</h2>
+        <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
+      </div>
+      <div id="botList"><div class="empty-state">Loading…</div></div>
+    </div>
+  </main>
+
+  <script>
+    const launchBtn  = document.getElementById("launchBtn");
+    const meetingUrl = document.getElementById("meetingUrl");
+    const botName    = document.getElementById("botName");
+    const toast      = document.getElementById("toast");
+    const botList    = document.getElementById("botList");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    // ── Launch ──────────────────────────────────────────────────────────────
+    async function launch() {
+      const url = meetingUrl.value.trim();
+      if (!url) { showToast("error", "Please enter a meeting URL."); return; }
+
+      launchBtn.disabled = true;
+      launchBtn.textContent = "Launching…";
+      clearToast();
+
+      try {
+        const res  = await fetch("/launch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ meeting_url: url, bot_name: botName.value.trim() || "GiGi" }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error, null, 2);
+          showToast("error", "Failed: " + msg);
+        } else {
+          showToast("success", `GiGi is joining the meeting!\nBot ID: ${data.botId}`);
+          meetingUrl.value = "";
+          setTimeout(loadBots, 2000);
+        }
+      } catch (e) {
+        showToast("error", "Network error: " + e.message);
+      } finally {
+        launchBtn.disabled = false;
+        launchBtn.textContent = "Send GiGi ↗";
+      }
+    }
+
+    launchBtn.addEventListener("click", launch);
+    meetingUrl.addEventListener("keydown", e => { if (e.key === "Enter") launch(); });
+
+    // ── Bot list ─────────────────────────────────────────────────────────────
+    function statusInfo(bot) {
+      const changes = bot.status_changes ?? [];
+      const last = changes.length ? changes[changes.length - 1].code : null;
+
+      if (!last || last === "joining_call" || last === "in_waiting_room") {
+        return { label: "Joining", cls: "status-joining", dot: "dot-yellow" };
+      }
+      if (last === "in_call_not_recording" || last === "in_call_recording") {
+        return { label: "In Call", cls: "status-in-call", dot: "dot-green" };
+      }
+      if (last === "call_ended" || last === "done") {
+        return { label: "Done", cls: "status-done", dot: "dot-grey" };
+      }
+      if (last === "fatal") {
+        return { label: "Error", cls: "status-error", dot: "dot-red" };
+      }
+      return { label: last, cls: "status-joining", dot: "dot-yellow" };
+    }
+
+    function meetingLabel(bot) {
+      const m = bot.meeting_url;
+      if (!m) return "Unknown meeting";
+      if (m.meeting_id) return `${m.platform?.replace("_", " ")} · ${m.meeting_id}`;
+      return m;
+    }
+
+    async function removeBot(id) {
+      await fetch(`/bots/${id}`, { method: "DELETE" });
+      setTimeout(loadBots, 1000);
+    }
+
+    async function loadBots() {
+      refreshBtn.textContent = "↻ Refreshing…";
+      try {
+        const res  = await fetch("/bots");
+        const data = await res.json();
+        const bots = data.results ?? [];
+
+        if (!bots.length) {
+          botList.innerHTML = '<div class="empty-state">No bots yet — send GiGi to a meeting above.</div>';
+          return;
+        }
+
+        botList.innerHTML = "";
+        for (const bot of bots) {
+          const { label, cls, dot } = statusInfo(bot);
+          const isActive = cls === "status-in-call" || cls === "status-joining";
+
+          const card = document.createElement("div");
+          card.className = "bot-card";
+          card.innerHTML = `
+            <div class="status-dot ${dot}"></div>
+            <div class="bot-info">
+              <div class="bot-name">${bot.bot_name ?? "GiGi"}</div>
+              <div class="bot-meta">${meetingLabel(bot)} &nbsp;·&nbsp; ${bot.id.slice(0, 8)}…</div>
+            </div>
+            <span class="bot-status ${cls}">${label}</span>
+            ${isActive ? `<button class="btn btn-red btn-sm" onclick="removeBot('${bot.id}')">Leave</button>` : ""}
+          `;
+          botList.appendChild(card);
+        }
+      } catch (e) {
+        botList.innerHTML = '<div class="empty-state">Could not load bots.</div>';
+      } finally {
+        refreshBtn.textContent = "↻ Refresh";
+      }
+    }
+
+    refreshBtn.addEventListener("click", loadBots);
+
+    // ── Toast helpers ────────────────────────────────────────────────────────
+    function showToast(type, msg) {
+      toast.className = type;
+      toast.textContent = msg;
+    }
+    function clearToast() {
+      toast.className = "";
+      toast.textContent = "";
+      toast.style.display = "none";
+    }
+
+    // ── Auto-refresh every 10s while any bot is active ──────────────────────
+    loadBots();
+    setInterval(loadBots, 10000);
+  </script>
+</body>
+</html>
