@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launch GiGi</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    h1 span { color: #4ade80; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #f0f0f0;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input:focus { border-color: #4ade80; }
+    input::placeholder { color: #555; }
+
+    button {
+      background: #4ade80;
+      border: none;
+      border-radius: 10px;
+      color: #0f0f0f;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 14px;
+      transition: opacity 0.2s;
+      width: 100%;
+    }
+
+    button:hover:not(:disabled) { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #result {
+      border-radius: 10px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      padding: 14px 16px;
+      display: none;
+    }
+
+    #result.success {
+      background: #0d2e1a;
+      border: 1px solid #4ade80;
+      color: #4ade80;
+      display: block;
+    }
+
+    #result.error {
+      background: #2e0d0d;
+      border: 1px solid #f87171;
+      color: #f87171;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Launch <span>GiGi</span></h1>
+
+    <div class="field">
+      <label>Meeting URL</label>
+      <input id="meetingUrl" type="url" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
+    </div>
+
+    <div class="field">
+      <label>Bot Name</label>
+      <input id="botName" type="text" value="GiGi" />
+    </div>
+
+    <button id="launchBtn">Send GiGi to Meeting</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const launchBtn   = document.getElementById("launchBtn");
+    const meetingUrl  = document.getElementById("meetingUrl");
+    const botName     = document.getElementById("botName");
+    const result      = document.getElementById("result");
+
+    launchBtn.addEventListener("click", async () => {
+      const url = meetingUrl.value.trim();
+      if (!url) {
+        showResult("error", "Please enter a meeting URL.");
+        return;
+      }
+
+      launchBtn.disabled = true;
+      launchBtn.textContent = "Launching…";
+      result.className = "";
+      result.style.display = "none";
+
+      try {
+        const res = await fetch("/launch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            meeting_url: url,
+            bot_name: botName.value.trim() || "GiGi",
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          const msg = typeof data.error === "string"
+            ? data.error
+            : JSON.stringify(data.error, null, 2);
+          showResult("error", "Failed to launch bot:\n" + msg);
+        } else {
+          const joinTime = data.joinAt
+            ? new Date(data.joinAt).toLocaleTimeString()
+            : "shortly";
+          showResult("success",
+            `GiGi is joining the meeting!\n\nBot ID: ${data.botId}\nJoining at: ${joinTime}`
+          );
+          meetingUrl.value = "";
+        }
+      } catch (err) {
+        showResult("error", "Network error: " + err.message);
+      } finally {
+        launchBtn.disabled = false;
+        launchBtn.textContent = "Send GiGi to Meeting";
+      }
+    });
+
+    function showResult(type, msg) {
+      result.className = type;
+      result.textContent = msg;
+    }
+
+    meetingUrl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") launchBtn.click();
+    });
+  </script>
+</body>
+</html>
