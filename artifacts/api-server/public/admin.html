@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f4f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.09);
+      padding: 40px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    .avatar {
+      width: 46px; height: 46px;
+      background: #18181b;
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 { font-size: 1.15rem; font-weight: 700; color: #18181b; }
+    .header-text p  { font-size: 0.78rem; color: #9ca3af; margin-top: 2px; }
+
+    .field { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 7px;
+    }
+
+    select, input[type="url"] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      color: #18181b;
+      background: #fafafa;
+      outline: none;
+      transition: border-color 0.18s, background 0.18s;
+      appearance: none;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+      cursor: pointer;
+    }
+
+    select:focus, input[type="url"]:focus {
+      border-color: #18181b;
+      background: #fff;
+    }
+
+    input[type="url"]::placeholder { color: #d1d5db; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.1s;
+    }
+
+    button:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+    button:active:not(:disabled) { transform: none; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    #sendBtn   { background: #18181b; color: #fff; }
+    #removeBtn { background: #fee2e2; color: #991b1b; display: none; }
+
+    #result {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      line-height: 1.65;
+      display: none;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    #result.success { background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; display: block; }
+    #result.error   { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; display: block; }
+
+    .mono {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.78rem;
+      background: rgba(0,0,0,0.06);
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="avatar">A</div>
+      <div class="header-text">
+        <h1>Agent Admin</h1>
+        <p>Deploy any agent into any meeting</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Select Agent</label>
+      <select id="agentSelect">
+        <option value="Sarah|https://welaunch.click/?agent=sarah">Sarah</option>
+        <option value="Emma|https://welaunch.click/?agent=emma">Emma</option>
+        <option value="Scarlett|https://welaunch.click/?agent=scarlett">Scarlett</option>
+        <option value="ESAL|https://welaunch.click/?agent=esal">ESAL</option>
+        <option value="Erin|https://welaunch.click/?agent=erin">Erin</option>
+        <option value="Jennifer|https://welaunch.click/?agent=jennifer">Jennifer</option>
+        <option value="Ellen|https://welaunch.click/?agent=ellen">Ellen</option>
+        <option value="Doug|https://welaunch.click/?agent=doug">Doug</option>
+        <option value="Lex|https://welaunch.click/?agent=lex">Lex</option>
+        <option value="Hannah|https://welaunch.click/?agent=hannah">Hannah</option>
+        <option value="Tracy|https://welaunch.click/?agent=tracy">Tracy</option>
+        <option value="Kate|https://welaunch.click/?agent=kate">Kate</option>
+        <option value="Layla|https://welaunch.click/?agent=layla">Layla</option>
+        <option value="Gigi|https://welaunch.click/?agent=gigi">Gigi</option>
+        <option value="GiGi-Avi|https://welaunch.click/?agent=gigi-avi" selected>GiGi-Avi</option>
+        <option value="Ava|https://welaunch.click/?agent=ava">Ava</option>
+        <option value="Carol|https://welaunch.click/?agent=carol">Carol</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Meeting URL</label>
+      <input
+        type="url"
+        id="meetingUrl"
+        placeholder="https://meet.google.com/xxx-xxxx-xxx"
+        autofocus
+      />
+    </div>
+
+    <div class="btn-row">
+      <button id="sendBtn">Send Agent to Meeting</button>
+      <button id="removeBtn">Remove from Meeting</button>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const agentSelect = document.getElementById("agentSelect");
+    const meetingUrl  = document.getElementById("meetingUrl");
+    const sendBtn     = document.getElementById("sendBtn");
+    const removeBtn   = document.getElementById("removeBtn");
+    const result      = document.getElementById("result");
+
+    let lastBotId = null;
+
+    function parseAgent() {
+      const [name, url] = agentSelect.value.split("|");
+      return { name, url };
+    }
+
+    function show(type, msg) {
+      result.className = type;
+      result.innerHTML = msg;
+    }
+
+    function clearResult() {
+      result.className = "";
+      result.style.display = "none";
+      result.innerHTML = "";
+    }
+
+    // ── Send ────────────────────────────────────────────────────────────────
+    async function send() {
+      const url = meetingUrl.value.trim();
+      if (!url) { show("error", "Please enter a meeting URL."); return; }
+
+      const { name, url: agentUrl } = parseAgent();
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Sending…";
+      clearResult();
+
+      try {
+        const res  = await fetch("/send-bot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ meeting_url: url, agent_url: agentUrl, bot_name: name }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error, null, 2);
+          show("error", "Failed:\n" + msg);
+        } else {
+          lastBotId = data.id;
+          removeBtn.style.display = "block";
+          show("success",
+            `${name} is joining the meeting!\n\nBot ID: <span class="mono">${data.id}</span>`
+          );
+          meetingUrl.value = "";
+        }
+      } catch (e) {
+        show("error", "Network error: " + e.message);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send Agent to Meeting";
+      }
+    }
+
+    // ── Remove ───────────────────────────────────────────────────────────────
+    async function remove() {
+      if (!lastBotId) return;
+
+      removeBtn.disabled = true;
+      removeBtn.textContent = "Removing…";
+
+      try {
+        const res  = await fetch("/remove-bot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bot_id: lastBotId }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error, null, 2);
+          show("error", "Could not remove bot:\n" + msg);
+        } else {
+          lastBotId = null;
+          removeBtn.style.display = "none";
+          show("success", "Agent removed from the meeting.");
+        }
+      } catch (e) {
+        show("error", "Network error: " + e.message);
+      } finally {
+        removeBtn.disabled = false;
+        removeBtn.textContent = "Remove from Meeting";
+      }
+    }
+
+    sendBtn.addEventListener("click", send);
+    removeBtn.addEventListener("click", remove);
+    meetingUrl.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  </script>
+</body>
+</html>
