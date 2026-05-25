@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ElevenLabs Agent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: #aaa;
+    }
+
+    #status {
+      font-size: 1.1rem;
+      padding: 10px 24px;
+      border-radius: 999px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      min-width: 180px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    #status.listening  { border-color: #4ade80; color: #4ade80; }
+    #status.speaking   { border-color: #60a5fa; color: #60a5fa; }
+    #status.connecting { border-color: #facc15; color: #facc15; }
+    #status.error      { border-color: #f87171; color: #f87171; }
+
+    #log {
+      font-size: 0.8rem;
+      color: #555;
+      max-width: 420px;
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>ElevenLabs Voice Agent</h1>
+  <div id="status">connecting…</div>
+  <div id="log"></div>
+
+  <script type="module">
+    // ─── PASTE YOUR AGENT ID HERE ───────────────────────────────────────────
+    const AGENT_ID = "agent_0501kq4wvagsec0a60x7v6ztkpcb";
+    // ────────────────────────────────────────────────────────────────────────
+
+    import { Conversation } from "https://esm.sh/@11labs/client@latest";
+
+    const statusEl = document.getElementById("status");
+    const logEl    = document.getElementById("log");
+
+    function setStatus(text, cls) {
+      statusEl.textContent = text;
+      statusEl.className   = cls || "";
+    }
+
+    function log(msg) {
+      logEl.textContent = msg;
+      console.log(msg);
+    }
+
+    const MAX_RETRIES   = 10;
+    const BASE_DELAY_MS = 2000;
+    const MAX_DELAY_MS  = 30000;
+
+    let retryCount = 0;
+    let retryTimer = null;
+
+    function scheduleReconnect() {
+      const delay = Math.min(BASE_DELAY_MS * 2 ** retryCount, MAX_DELAY_MS);
+      retryCount++;
+      setStatus("reconnecting…", "connecting");
+      log(`Reconnecting in ${Math.round(delay / 1000)}s… (attempt ${retryCount}/${MAX_RETRIES})`);
+      retryTimer = setTimeout(start, delay);
+    }
+
+    async function start() {
+      clearTimeout(retryTimer);
+      try {
+        setStatus("requesting mic…", "connecting");
+        log("Requesting microphone access…");
+
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        setStatus("connecting…", "connecting");
+        log("Connecting to ElevenLabs agent…");
+
+        await Conversation.startSession({
+          agentId: AGENT_ID,
+
+          onConnect() {
+            retryCount = 0;
+            setStatus("listening", "listening");
+            log("Connected — agent is listening.");
+          },
+
+          onDisconnect() {
+            if (retryCount < MAX_RETRIES) {
+              scheduleReconnect();
+            } else {
+              setStatus("disconnected");
+              log("Max reconnection attempts reached. Reload to try again.");
+            }
+          },
+
+          onModeChange({ mode }) {
+            if (mode === "speaking") {
+              setStatus("speaking", "speaking");
+              log("Agent is speaking…");
+            } else {
+              setStatus("listening", "listening");
+              log("Agent is listening…");
+            }
+          },
+
+          onError(error) {
+            console.error(error);
+          },
+        });
+
+      } catch (err) {
+        console.error(err);
+        if (retryCount < MAX_RETRIES) {
+          scheduleReconnect();
+        } else {
+          setStatus("error", "error");
+          log("Failed to connect after " + MAX_RETRIES + " attempts.");
+        }
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
